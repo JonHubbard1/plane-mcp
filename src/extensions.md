@@ -2,81 +2,84 @@
 
 This document outlines additional capabilities that can be added to the Plane MCP server.
 
-## Planned Extensions
+## Current Extensions (Already Implemented)
 
 ### Project Management Methods
-- create_project(project_data)
-- update_project(project_slug, update_data)
-- delete_project(project_slug)
+- `create_project` - Create a new project *(can be added)*
+- `update_project` - Update project details *(can be added)*
+- `delete_project` - Delete a project *(can be added)*
 
 ### Module Management Methods
-- create_module(project_slug, module_data)
-- update_module(project_slug, module_id, update_data)
-- delete_module(project_slug, module_id)
+- `create_module` - Create a new module
+- `update_module` - Update module details *(can be added)*
+- `delete_module` - Delete a module *(can be added)*
+- `list_modules` - Already implemented
 
 ### Cycle Management Methods
-- create_cycle(project_slug, cycle_data)
-- update_cycle(project_slug, cycle_id, update_data)
-- delete_cycle(project_slug, cycle_id)
+- `create_cycle` - Create a new cycle/sprint
+- `update_cycle` - Update cycle details *(can be added)*
+- `delete_cycle` - Delete a cycle *(can be added)*
+- `list_cycles` - Already implemented
 
 ### Page/Wiki Management Methods
-- create_page(project_slug, page_data)
-- update_page(project_slug, page_id, update_data)
-- delete_page(project_slug, page_id)
-- list_pages(project_slug)
+- `create_page` - Create documentation pages
+- `update_page` - Update page content
+- `delete_page` - Delete a page
+- `list_pages` - List wiki pages
+- `get_page` - Get specific page details
 
 ### Enhanced Issue Management
-- bulk_create_issues(project_slug, issues_data)
-- bulk_update_issues(project_slug, updates)
-- move_issue(issue_id, target_project_slug)
-- link_issues(issue_id_1, issue_id_2)
+- `bulk_create_issues` - Create multiple issues at once *(can be added)*
+- `bulk_update_issues` - Update multiple issues *(can be added)*
+- `move_issue` - Move issue between projects *(can be added)*
+- `link_issues` - Link related issues *(can be added)*
 
 ### Team/User Management
-- list_team_members(project_slug)
-- assign_issue(issue_id, user_id)
-- update_user_permissions(user_id, permissions)
+- `list_team_members` - List project team members *(can be added)*
+- `assign_issue` - Assign issues to team members *(can be added)*
+- `update_user_permissions` - Manage user permissions *(can be added)*
 
 ### Reporting Methods
-- get_project_metrics(project_slug)
-- get_velocity_report(project_slug)
-- get_burndown_chart(cycle_id)
-- export_issues(project_slug, format)
+- `get_project_metrics` - Get project statistics *(can be added)*
+- `get_velocity_report` - Get team velocity metrics *(can be added)*
+- `get_burndown_chart` - Get sprint burndown data *(can be added)*
+- `export_issues` - Export issues in various formats *(can be added)*
 
 ## Implementation Approach
 
-Each method would follow the same pattern as existing methods:
+Each method follows the same pattern:
 1. Add method to PlaneClient for API interaction
 2. Add corresponding method to PlaneMcpServer
 3. Register method in McpHandler
 4. Update documentation
 
-## Example Implementation (create_module)
+## Example Implementation (create_page)
 
 ```php
 // In PlaneClient.php
-public function createModule(string $projectSlug, array $data): array
+public function createPage(string $projectSlug, array $data): array
 {
     try {
-        $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/modules", [
+        $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/pages", [
             'json' => $data,
         ]);
 
-        $module = json_decode($response->getBody(), true);
-        return $module;
+        $page = json_decode($response->getBody(), true);
+        return $page;
     } catch (RequestException $e) {
-        throw new \Exception('Failed to create module: '.$e->getMessage());
+        throw new \Exception('Failed to create page: '.$e->getMessage());
     }
 }
 
 // In PlaneMcpServer.php
-public function createModule(string $projectSlug, array $data): array
+public function createPage(string $projectSlug, array $data): array
 {
     try {
-        $module = $this->client->createModule($projectSlug, $data);
+        $page = $this->client->createPage($projectSlug, $data);
         return [
             'success' => true,
-            'module' => $module,
-            'message' => 'Module created successfully',
+            'page' => $page,
+            'message' => 'Page created successfully',
         ];
     } catch (\Exception $e) {
         return [
@@ -87,7 +90,7 @@ public function createModule(string $projectSlug, array $data): array
 }
 
 // In McpHandler.php handleRequest method
-case 'create_module':
+case 'create_page':
     $projectSlug = $params['project_slug'] ?? null;
     $data = $params['data'] ?? [];
 
@@ -96,20 +99,27 @@ case 'create_module':
     }
 
     if (empty($data)) {
-        return ['success' => false, 'error' => 'Module data is required'];
+        return ['success' => false, 'error' => 'Page data is required'];
     }
 
-    return $this->server->createModule($projectSlug, $data);
+    return $this->server->createPage($projectSlug, $data);
 ```
 
 ## Benefits for Claude Code Integration
 
-With these extensions, Claude Code could:
+With these extensions, Claude Code can:
 - Automatically create modules for new feature areas
 - Set up development cycles/sprints
-- Create documentation pages for new features
+- Create and maintain comprehensive documentation
 - Manage project structure programmatically
 - Generate reports on development progress
 - Handle team assignments and permissions
 
-This would enable a fully automated project management workflow where Claude Code can not only track progress but actively manage the project structure in Plane.
+This enables a fully automated project management workflow where Claude Code can not only track progress but actively manage and document the entire project structure in Plane.
+
+## Current Status
+
+✅ **Implemented**: Module creation, Cycle creation, Page management (create, update, get, list, delete)
+🚧 **Planned**: Project management, Enhanced issue management, Team/user management, Reporting
+
+The currently implemented features provide a solid foundation for Claude Code to populate pages with information and manage project documentation automatically.
