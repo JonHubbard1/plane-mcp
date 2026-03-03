@@ -314,6 +314,48 @@ class PlaneMcpServer
     }
 
     /**
+     * Create a new module
+     */
+    public function createModule(string $projectSlug, array $data): array
+    {
+        try {
+            $module = $this->client->createModule($projectSlug, $data);
+
+            return [
+                'success' => true,
+                'module' => $module,
+                'message' => 'Module created successfully',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Create a new cycle
+     */
+    public function createCycle(string $projectSlug, array $data): array
+    {
+        try {
+            $cycle = $this->client->createCycle($projectSlug, $data);
+
+            return [
+                'success' => true,
+                'cycle' => $cycle,
+                'message' => 'Cycle created successfully',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Create a new project
      */
     public function createProject(array $data): array

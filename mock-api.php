@@ -39,7 +39,7 @@ if (strpos($path, '/api/v1/projects') === 0) {
                 'description' => 'Personal development projects'
             ]
         ]);
-    } elseif ($method === 'POST' && $path === '/api/v1/projects') {
+    } elseif ($method === 'POST' && $path === '/api/v1/projects/') {
         // Create project
         echo json_encode([
             'id' => 'proj-3',
