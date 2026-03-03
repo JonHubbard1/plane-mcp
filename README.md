@@ -6,17 +6,20 @@ A Model Context Protocol (MCP) server for integrating with [Plane](https://plane
 
 This MCP server allows AI assistants like Claude Code to interact directly with Plane instances, enabling:
 - Reading project status and progress
-- Creating and updating issues
-- Managing sprints and milestones
+- Creating and updating projects
+- Managing modules and development cycles
+- Creating and maintaining documentation pages
 - Tracking work across multiple projects
 
 ## Features
 
+- **Project Management**: Create, read, update, and delete projects
+- **Module Management**: Create and manage feature modules
+- **Cycle Management**: Create and manage development cycles/sprints
+- **Page Management**: Create, update, and maintain documentation
+- **Issue Management**: Create and update issues
 - **Authentication**: Secure connection to Plane instances
-- **Project Management**: List projects, modules, and cycles
-- **Issue Operations**: Create, read, update, and delete issues
-- **Progress Tracking**: Update statuses, assignments, and progress
-- **Search**: Find issues, projects, and team members
+- **Caching**: Built-in caching for improved performance
 
 ## Requirements
 
@@ -27,6 +30,11 @@ This MCP server allows AI assistants like Claude Code to interact directly with 
 ## Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/your-username/plane-mcp.git
+cd plane-mcp
+
+# Install dependencies
 composer install
 ```
 
@@ -79,15 +87,94 @@ Once the server is running, you can connect Claude Code to it by configuring an 
 
 The server exposes the following MCP methods:
 
-- `list_projects` - Get all projects
+### Project Management
+- `create_project` - Create a new project
+- `update_project` - Update an existing project
+- `delete_project` - Delete a project
 - `get_project` - Get details of a specific project
-- `list_issues` - List issues for a project
-- `get_issue` - Get details of a specific issue
+- `list_projects` - List all projects
+
+### Module Management
+- `create_module` - Create a new module
+- `update_module` - Update an existing module
+- `delete_module` - Delete a module
+- `list_modules` - List modules for a project
+
+### Cycle Management
+- `create_cycle` - Create a new cycle/sprint
+- `update_cycle` - Update an existing cycle
+- `delete_cycle` - Delete a cycle
+- `list_cycles` - List cycles for a project
+
+### Page Management
+- `create_page` - Create a new documentation page
+- `update_page` - Update an existing page
+- `delete_page` - Delete a page
+- `list_pages` - List pages for a project
+- `get_page` - Get details of a specific page
+
+### Issue Management
 - `create_issue` - Create a new issue
 - `update_issue` - Update an existing issue
-- `list_modules` - Get modules for a project
-- `list_cycles` - Get cycles for a project
+- `get_issue` - Get details of a specific issue
+- `list_issues` - List issues for a project
 - `search_issues` - Search issues across projects
+
+## Integration Examples
+
+### Creating a New Project
+```javascript
+const result = await mcp.call('create_project', {
+  data: {
+    name: 'Client Portal System',
+    identifier: 'client-portal',
+    description: 'Portal system for client self-service and support ticket management'
+  }
+});
+```
+
+### Creating Documentation
+```javascript
+const result = await mcp.call('create_page', {
+  project_slug: 'client-portal',
+  data: {
+    name: 'Project Overview',
+    content: '# Client Portal System\n\n## Overview\n...',
+    description: 'Project overview and technical details'
+  }
+});
+```
+
+### Bootstrapping a Project
+```javascript
+// Create project
+const project = await mcp.call('create_project', {
+  data: {
+    name: 'New Project',
+    identifier: 'new-project',
+    description: 'Description of the new project'
+  }
+});
+
+// Create standard modules
+await mcp.call('create_module', {
+  project_slug: 'new-project',
+  data: {
+    name: 'Authentication',
+    description: 'User authentication and authorization'
+  }
+});
+
+// Create documentation
+await mcp.call('create_page', {
+  project_slug: 'new-project',
+  data: {
+    name: 'Requirements',
+    content: '# Requirements\n\n## Functional Requirements\n...',
+    description: 'Project requirements document'
+  }
+});
+```
 
 ## Development
 
