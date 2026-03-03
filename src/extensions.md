@@ -5,21 +5,23 @@ This document outlines additional capabilities that can be added to the Plane MC
 ## Current Extensions (Already Implemented)
 
 ### Project Management Methods
-- `create_project` - Create a new project *(can be added)*
-- `update_project` - Update project details *(can be added)*
-- `delete_project` - Delete a project *(can be added)*
+- `create_project` - Create a new project
+- `update_project` - Update project details
+- `delete_project` - Delete a project
+- `get_project` - Get specific project details (already implemented)
+- `list_projects` - List all projects (already implemented)
 
 ### Module Management Methods
 - `create_module` - Create a new module
 - `update_module` - Update module details *(can be added)*
 - `delete_module` - Delete a module *(can be added)*
-- `list_modules` - Already implemented
+- `list_modules` - List modules for a project (already implemented)
 
 ### Cycle Management Methods
 - `create_cycle` - Create a new cycle/sprint
 - `update_cycle` - Update cycle details *(can be added)*
 - `delete_cycle` - Delete a cycle *(can be added)*
-- `list_cycles` - Already implemented
+- `list_cycles` - List cycles for a project (already implemented)
 
 ### Page/Wiki Management Methods
 - `create_page` - Create documentation pages
@@ -53,33 +55,33 @@ Each method follows the same pattern:
 3. Register method in McpHandler
 4. Update documentation
 
-## Example Implementation (create_page)
+## Example Implementation (create_project)
 
 ```php
 // In PlaneClient.php
-public function createPage(string $projectSlug, array $data): array
+public function createProject(array $data): array
 {
     try {
-        $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/pages", [
+        $response = $this->httpClient->post("/api/v1/projects/", [
             'json' => $data,
         ]);
 
-        $page = json_decode($response->getBody(), true);
-        return $page;
+        $project = json_decode($response->getBody(), true);
+        return $project;
     } catch (RequestException $e) {
-        throw new \Exception('Failed to create page: '.$e->getMessage());
+        throw new \Exception('Failed to create project: '.$e->getMessage());
     }
 }
 
 // In PlaneMcpServer.php
-public function createPage(string $projectSlug, array $data): array
+public function createProject(array $data): array
 {
     try {
-        $page = $this->client->createPage($projectSlug, $data);
+        $project = $this->client->createProject($data);
         return [
             'success' => true,
-            'page' => $page,
-            'message' => 'Page created successfully',
+            'project' => $project,
+            'message' => 'Project created successfully',
         ];
     } catch (\Exception $e) {
         return [
@@ -90,36 +92,31 @@ public function createPage(string $projectSlug, array $data): array
 }
 
 // In McpHandler.php handleRequest method
-case 'create_page':
-    $projectSlug = $params['project_slug'] ?? null;
+case 'create_project':
     $data = $params['data'] ?? [];
 
-    if (!$projectSlug) {
-        return ['success' => false, 'error' => 'Project slug is required'];
-    }
-
     if (empty($data)) {
-        return ['success' => false, 'error' => 'Page data is required'];
+        return ['success' => false, 'error' => 'Project data is required'];
     }
 
-    return $this->server->createPage($projectSlug, $data);
+    return $this->server->createProject($data);
 ```
 
 ## Benefits for Claude Code Integration
 
 With these extensions, Claude Code can:
-- Automatically create modules for new feature areas
-- Set up development cycles/sprints
+- Automatically create new projects for client work
+- Bootstrap projects with standard structures and documentation
+- Manage project lifecycle from inception to completion
 - Create and maintain comprehensive documentation
-- Manage project structure programmatically
+- Set up development workflows with modules and cycles
 - Generate reports on development progress
-- Handle team assignments and permissions
 
-This enables a fully automated project management workflow where Claude Code can not only track progress but actively manage and document the entire project structure in Plane.
+This enables a fully automated project management workflow where Claude Code can not only track progress but actively create, manage, and document entire projects in Plane.
 
 ## Current Status
 
-✅ **Implemented**: Module creation, Cycle creation, Page management (create, update, get, list, delete)
-🚧 **Planned**: Project management, Enhanced issue management, Team/user management, Reporting
+✅ **Implemented**: Project management (create, update, delete), Module creation, Cycle creation, Page management (create, update, get, list, delete)
+🚧 **Planned**: Enhanced issue management, Team/user management, Reporting
 
-The currently implemented features provide a solid foundation for Claude Code to populate pages with information and manage project documentation automatically.
+The currently implemented features provide a complete foundation for Claude Code to create and manage projects, populate them with information, and maintain comprehensive documentation automatically.
