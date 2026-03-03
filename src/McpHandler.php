@@ -202,6 +202,38 @@ class McpHandler
 
                 return $this->server->deletePage($projectSlug, $pageId);
 
+            case 'create_project':
+                $data = $params['data'] ?? [];
+
+                if (empty($data)) {
+                    return ['success' => false, 'error' => 'Project data is required'];
+                }
+
+                return $this->server->createProject($data);
+
+            case 'update_project':
+                $projectSlug = $params['project_slug'] ?? null;
+                $data = $params['data'] ?? [];
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                if (empty($data)) {
+                    return ['success' => false, 'error' => 'Update data is required'];
+                }
+
+                return $this->server->updateProject($projectSlug, $data);
+
+            case 'delete_project':
+                $projectSlug = $params['project_slug'] ?? null;
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                return $this->server->deleteProject($projectSlug);
+
             default:
                 return ['success' => false, 'error' => 'Unknown method: ' . $method];
         }
@@ -318,6 +350,25 @@ class McpHandler
                 'parameters' => [
                     'project_slug' => 'string (required) - The project slug',
                     'page_id' => 'string (required) - The page ID'
+                ]
+            ],
+            'create_project' => [
+                'description' => 'Create a new project',
+                'parameters' => [
+                    'data' => 'array (required) - Project data'
+                ]
+            ],
+            'update_project' => [
+                'description' => 'Update an existing project',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'data' => 'array (required) - Update data'
+                ]
+            ],
+            'delete_project' => [
+                'description' => 'Delete a project',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug'
                 ]
             ]
         ];

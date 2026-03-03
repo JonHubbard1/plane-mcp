@@ -398,4 +398,66 @@ class PlaneClient
             throw new \Exception('Failed to delete page: '.$e->getMessage());
         }
     }
+
+    /**
+     * Create a new project
+     */
+    public function createProject(array $data): array
+    {
+        try {
+            $response = $this->httpClient->post("/api/v1/projects/", [
+                'json' => $data,
+            ]);
+
+            $project = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.projects"]);
+
+            return $project;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to create project: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Update an existing project
+     */
+    public function updateProject(string $projectSlug, array $data): array
+    {
+        try {
+            $response = $this->httpClient->patch("/api/v1/projects/{$projectSlug}", [
+                'json' => $data,
+            ]);
+
+            $project = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.project.{$projectSlug}"]);
+            unset($this->cache["plane.projects"]);
+
+            return $project;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to update project: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a project
+     */
+    public function deleteProject(string $projectSlug): array
+    {
+        try {
+            $response = $this->httpClient->delete("/api/v1/projects/{$projectSlug}");
+            $result = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.project.{$projectSlug}"]);
+            unset($this->cache["plane.projects"]);
+
+            return $result;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to delete project: '.$e->getMessage());
+        }
+    }
 }

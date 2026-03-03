@@ -39,6 +39,14 @@ if (strpos($path, '/api/v1/projects') === 0) {
                 'description' => 'Personal development projects'
             ]
         ]);
+    } elseif ($method === 'POST' && $path === '/api/v1/projects') {
+        // Create project
+        echo json_encode([
+            'id' => 'proj-3',
+            'name' => $input['name'] ?? 'New Project',
+            'identifier' => $input['identifier'] ?? 'new-project',
+            'description' => $input['description'] ?? 'New project description'
+        ]);
     } elseif ($method === 'GET' && preg_match('/\/api\/v1\/projects\/([^\/]+)$/', $path, $matches)) {
         // Get specific project
         $projectSlug = $matches[1];
@@ -48,6 +56,19 @@ if (strpos($path, '/api/v1/projects') === 0) {
             'identifier' => $projectSlug,
             'description' => 'SupportHub project for IT management'
         ]);
+    } elseif ($method === 'PATCH' && preg_match('/\/api\/v1\/projects\/([^\/]+)$/', $path, $matches)) {
+        // Update project
+        $projectSlug = $matches[1];
+        echo json_encode([
+            'id' => 'proj-1',
+            'name' => $input['name'] ?? 'SupportHub',
+            'identifier' => $projectSlug,
+            'description' => $input['description'] ?? 'Updated description'
+        ]);
+    } elseif ($method === 'DELETE' && preg_match('/\/api\/v1\/projects\/([^\/]+)$/', $path, $matches)) {
+        // Delete project
+        $projectSlug = $matches[1];
+        echo json_encode(['message' => 'Project deleted successfully']);
     } elseif ($method === 'GET' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/issues/', $path, $matches)) {
         // Get issues for project
         $projectSlug = $matches[1];

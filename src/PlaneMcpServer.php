@@ -312,4 +312,67 @@ class PlaneMcpServer
             ];
         }
     }
+
+    /**
+     * Create a new project
+     */
+    public function createProject(array $data): array
+    {
+        try {
+            $project = $this->client->createProject($data);
+
+            return [
+                'success' => true,
+                'project' => $project,
+                'message' => 'Project created successfully',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Update an existing project
+     */
+    public function updateProject(string $projectSlug, array $data): array
+    {
+        try {
+            $project = $this->client->updateProject($projectSlug, $data);
+
+            return [
+                'success' => true,
+                'project' => $project,
+                'message' => 'Project updated successfully',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Delete a project
+     */
+    public function deleteProject(string $projectSlug): array
+    {
+        try {
+            $result = $this->client->deleteProject($projectSlug);
+
+            return [
+                'success' => true,
+                'result' => $result,
+                'message' => 'Project deleted successfully',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
 }
