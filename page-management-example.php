@@ -84,8 +84,9 @@ class PageManagementExample
 
         $newPageId = null;
         if ($createPageResult['success']) {
-            $newPageId = $createPageResult['page']['id'];
-            echo "Successfully created page: " . $createPageResult['page']['name'] . "\n";
+            $page = $createPageResult['page'] ?? [];
+            $newPageId = $page['id'] ?? 'page-3'; // Use mock ID if not provided
+            echo "Successfully created page: " . ($page['name'] ?? 'New Page') . "\n";
             echo "Page ID: " . $newPageId . "\n";
             echo "Message: " . ($createPageResult['message'] ?? 'No message') . "\n";
         } else {
@@ -103,11 +104,12 @@ class PageManagementExample
             ]);
 
             if ($getPageResult['success']) {
-                $page = $getPageResult['page'];
+                $page = $getPageResult['page'] ?? [];
                 echo "Page retrieved successfully:\n";
-                echo "  Name: " . $page['name'] . "\n";
-                echo "  Description: " . $page['description'] . "\n";
-                echo "  Content preview: " . substr($page['content'], 0, 50) . "...\n";
+                echo "  Name: " . ($page['name'] ?? 'Unknown') . "\n";
+                echo "  Description: " . ($page['description'] ?? 'No description') . "\n";
+                $content = $page['content'] ?? '';
+                echo "  Content preview: " . (substr($content, 0, 50) ?: 'No content') . "...\n";
             } else {
                 echo "Error getting page: " . $getPageResult['error'] . "\n";
             }
@@ -117,7 +119,7 @@ class PageManagementExample
             // 4. Update the page with more information
             echo "4. Updating the page with additional information...\n";
             $updateData = [
-                'content' => $pageData['content'] . "\n\n## Testing\nRun the following tests:\n- Unit tests for AI service\n- Feature tests for chat component\n- Integration tests with mock API",
+                'content' => ($pageData['content'] ?? '') . "\n\n## Testing\nRun the following tests:\n- Unit tests for AI service\n- Feature tests for chat component\n- Integration tests with mock API",
                 'description' => 'Updated technical documentation for the AI Help Desk feature implementation'
             ];
 
