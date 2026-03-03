@@ -246,4 +246,48 @@ class PlaneClient
             throw new \Exception('Failed to fetch cycles: '.$e->getMessage());
         }
     }
+
+    /**
+     * Create a new module
+     */
+    public function createModule(string $projectSlug, array $data): array
+    {
+        try {
+            $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/modules", [
+                'json' => $data,
+            ]);
+
+            $module = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.modules.{$projectSlug}"]);
+            unset($this->cache["plane.project.{$projectSlug}"]);
+
+            return $module;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to create module: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Create a new cycle
+     */
+    public function createCycle(string $projectSlug, array $data): array
+    {
+        try {
+            $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/cycles", [
+                'json' => $data,
+            ]);
+
+            $cycle = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.cycles.{$projectSlug}"]);
+            unset($this->cache["plane.project.{$projectSlug}"]);
+
+            return $cycle;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to create cycle: '.$e->getMessage());
+        }
+    }
 }

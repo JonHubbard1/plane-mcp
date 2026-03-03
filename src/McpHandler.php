@@ -104,6 +104,34 @@ class McpHandler
                 $projectSlug = $params['project_slug'] ?? null;
                 return $this->server->searchIssues($query, $projectSlug);
 
+            case 'create_module':
+                $projectSlug = $params['project_slug'] ?? null;
+                $data = $params['data'] ?? [];
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                if (empty($data)) {
+                    return ['success' => false, 'error' => 'Module data is required'];
+                }
+
+                return $this->server->createModule($projectSlug, $data);
+
+            case 'create_cycle':
+                $projectSlug = $params['project_slug'] ?? null;
+                $data = $params['data'] ?? [];
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                if (empty($data)) {
+                    return ['success' => false, 'error' => 'Cycle data is required'];
+                }
+
+                return $this->server->createCycle($projectSlug, $data);
+
             default:
                 return ['success' => false, 'error' => 'Unknown method: ' . $method];
         }
@@ -171,6 +199,20 @@ class McpHandler
                 'parameters' => [
                     'query' => 'string (required) - Search query',
                     'project_slug' => 'string (optional) - Limit search to specific project'
+                ]
+            ],
+            'create_module' => [
+                'description' => 'Create a new module',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'data' => 'array (required) - Module data'
+                ]
+            ],
+            'create_cycle' => [
+                'description' => 'Create a new cycle',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'data' => 'array (required) - Cycle data'
                 ]
             ]
         ];

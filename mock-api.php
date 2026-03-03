@@ -92,6 +92,14 @@ if (strpos($path, '/api/v1/projects') === 0) {
                 'description' => 'AI-powered helpdesk features'
             ]
         ]);
+    } elseif ($method === 'POST' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/modules/', $path, $matches)) {
+        // Create module
+        $projectSlug = $matches[1];
+        echo json_encode([
+            'id' => 'mod-3',
+            'name' => $input['name'] ?? 'New Module',
+            'description' => $input['description'] ?? 'No description'
+        ]);
     } elseif ($method === 'GET' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/cycles/', $path, $matches)) {
         // Get cycles for project
         $projectSlug = $matches[1];
@@ -106,6 +114,16 @@ if (strpos($path, '/api/v1/projects') === 0) {
                 'name' => 'V1.5 Status Board',
                 'description' => 'Status board release'
             ]
+        ]);
+    } elseif ($method === 'POST' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/cycles/', $path, $matches)) {
+        // Create cycle
+        $projectSlug = $matches[1];
+        echo json_encode([
+            'id' => 'cycle-3',
+            'name' => $input['name'] ?? 'New Cycle',
+            'description' => $input['description'] ?? 'No description',
+            'start_date' => $input['start_date'] ?? date('Y-m-d'),
+            'end_date' => $input['end_date'] ?? date('Y-m-d', strtotime('+2 weeks'))
         ]);
     } else {
         http_response_code(404);
