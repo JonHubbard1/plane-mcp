@@ -125,6 +125,55 @@ if (strpos($path, '/api/v1/projects') === 0) {
             'start_date' => $input['start_date'] ?? date('Y-m-d'),
             'end_date' => $input['end_date'] ?? date('Y-m-d', strtotime('+2 weeks'))
         ]);
+    } elseif ($method === 'GET' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/pages/', $path, $matches)) {
+        // Get pages for project
+        $projectSlug = $matches[1];
+        echo json_encode([
+            [
+                'id' => 'page-1',
+                'name' => 'Project Overview',
+                'content' => 'Overview of the SupportHub project'
+            ],
+            [
+                'id' => 'page-2',
+                'name' => 'API Documentation',
+                'content' => 'API endpoints and usage examples'
+            ]
+        ]);
+    } elseif ($method === 'POST' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/pages/', $path, $matches)) {
+        // Create page
+        $projectSlug = $matches[1];
+        echo json_encode([
+            'id' => 'page-3',
+            'name' => $input['name'] ?? 'New Page',
+            'content' => $input['content'] ?? 'Page content',
+            'description' => $input['description'] ?? ''
+        ]);
+    } elseif ($method === 'GET' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/pages\/([^\/]+)/', $path, $matches)) {
+        // Get specific page
+        $projectSlug = $matches[1];
+        $pageId = $matches[2];
+        echo json_encode([
+            'id' => $pageId,
+            'name' => 'Sample Page',
+            'content' => 'This is the content of the sample page',
+            'description' => 'A sample page for demonstration'
+        ]);
+    } elseif ($method === 'PATCH' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/pages\/([^\/]+)/', $path, $matches)) {
+        // Update page
+        $projectSlug = $matches[1];
+        $pageId = $matches[2];
+        echo json_encode([
+            'id' => $pageId,
+            'name' => $input['name'] ?? 'Updated Page',
+            'content' => $input['content'] ?? 'Updated content',
+            'description' => $input['description'] ?? 'Updated description'
+        ]);
+    } elseif ($method === 'DELETE' && preg_match('/\/api\/v1\/projects\/([^\/]+)\/pages\/([^\/]+)/', $path, $matches)) {
+        // Delete page
+        $projectSlug = $matches[1];
+        $pageId = $matches[2];
+        echo json_encode(['message' => 'Page deleted successfully']);
     } else {
         http_response_code(404);
         echo json_encode(['error' => 'Endpoint not found']);

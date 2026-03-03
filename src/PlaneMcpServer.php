@@ -210,17 +210,17 @@ class PlaneMcpServer
     }
 
     /**
-     * Create a new module
+     * Create a new page
      */
-    public function createModule(string $projectSlug, array $data): array
+    public function createPage(string $projectSlug, array $data): array
     {
         try {
-            $module = $this->client->createModule($projectSlug, $data);
+            $page = $this->client->createPage($projectSlug, $data);
 
             return [
                 'success' => true,
-                'module' => $module,
-                'message' => 'Module created successfully',
+                'page' => $page,
+                'message' => 'Page created successfully',
             ];
         } catch (\Exception $e) {
             return [
@@ -231,17 +231,79 @@ class PlaneMcpServer
     }
 
     /**
-     * Create a new cycle
+     * Update an existing page
      */
-    public function createCycle(string $projectSlug, array $data): array
+    public function updatePage(string $projectSlug, string $pageId, array $data): array
     {
         try {
-            $cycle = $this->client->createCycle($projectSlug, $data);
+            $page = $this->client->updatePage($projectSlug, $pageId, $data);
 
             return [
                 'success' => true,
-                'cycle' => $cycle,
-                'message' => 'Cycle created successfully',
+                'page' => $page,
+                'message' => 'Page updated successfully',
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Get a specific page
+     */
+    public function getPage(string $projectSlug, string $pageId): array
+    {
+        try {
+            $page = $this->client->getPage($projectSlug, $pageId);
+
+            return [
+                'success' => true,
+                'page' => $page,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * List pages for a project
+     */
+    public function getPages(string $projectSlug): array
+    {
+        try {
+            $pages = $this->client->getPages($projectSlug);
+
+            return [
+                'success' => true,
+                'pages' => $pages,
+                'count' => count($pages),
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Delete a page
+     */
+    public function deletePage(string $projectSlug, string $pageId): array
+    {
+        try {
+            $result = $this->client->deletePage($projectSlug, $pageId);
+
+            return [
+                'success' => true,
+                'result' => $result,
+                'message' => 'Page deleted successfully',
             ];
         } catch (\Exception $e) {
             return [

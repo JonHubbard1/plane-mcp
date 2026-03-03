@@ -132,6 +132,76 @@ class McpHandler
 
                 return $this->server->createCycle($projectSlug, $data);
 
+            case 'create_page':
+                $projectSlug = $params['project_slug'] ?? null;
+                $data = $params['data'] ?? [];
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                if (empty($data)) {
+                    return ['success' => false, 'error' => 'Page data is required'];
+                }
+
+                return $this->server->createPage($projectSlug, $data);
+
+            case 'update_page':
+                $projectSlug = $params['project_slug'] ?? null;
+                $pageId = $params['page_id'] ?? null;
+                $data = $params['data'] ?? [];
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                if (!$pageId) {
+                    return ['success' => false, 'error' => 'Page ID is required'];
+                }
+
+                if (empty($data)) {
+                    return ['success' => false, 'error' => 'Update data is required'];
+                }
+
+                return $this->server->updatePage($projectSlug, $pageId, $data);
+
+            case 'get_page':
+                $projectSlug = $params['project_slug'] ?? null;
+                $pageId = $params['page_id'] ?? null;
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                if (!$pageId) {
+                    return ['success' => false, 'error' => 'Page ID is required'];
+                }
+
+                return $this->server->getPage($projectSlug, $pageId);
+
+            case 'list_pages':
+                $projectSlug = $params['project_slug'] ?? null;
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                return $this->server->getPages($projectSlug);
+
+            case 'delete_page':
+                $projectSlug = $params['project_slug'] ?? null;
+                $pageId = $params['page_id'] ?? null;
+
+                if (!$projectSlug) {
+                    return ['success' => false, 'error' => 'Project slug is required'];
+                }
+
+                if (!$pageId) {
+                    return ['success' => false, 'error' => 'Page ID is required'];
+                }
+
+                return $this->server->deletePage($projectSlug, $pageId);
+
             default:
                 return ['success' => false, 'error' => 'Unknown method: ' . $method];
         }
@@ -213,6 +283,41 @@ class McpHandler
                 'parameters' => [
                     'project_slug' => 'string (required) - The project slug',
                     'data' => 'array (required) - Cycle data'
+                ]
+            ],
+            'create_page' => [
+                'description' => 'Create a new page',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'data' => 'array (required) - Page data'
+                ]
+            ],
+            'update_page' => [
+                'description' => 'Update an existing page',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'page_id' => 'string (required) - The page ID',
+                    'data' => 'array (required) - Update data'
+                ]
+            ],
+            'get_page' => [
+                'description' => 'Get details of a specific page',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'page_id' => 'string (required) - The page ID'
+                ]
+            ],
+            'list_pages' => [
+                'description' => 'List pages for a project',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug'
+                ]
+            ],
+            'delete_page' => [
+                'description' => 'Delete a page',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'page_id' => 'string (required) - The page ID'
                 ]
             ]
         ];

@@ -290,4 +290,112 @@ class PlaneClient
             throw new \Exception('Failed to create cycle: '.$e->getMessage());
         }
     }
+
+    /**
+     * Create a new page/wiki entry
+     */
+    public function createPage(string $projectSlug, array $data): array
+    {
+        try {
+            $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/pages", [
+                'json' => $data,
+            ]);
+
+            $page = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.pages.{$projectSlug}"]);
+
+            return $page;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to create page: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Update an existing page
+     */
+    public function updatePage(string $projectSlug, string $pageId, array $data): array
+    {
+        try {
+            $response = $this->httpClient->patch("/api/v1/projects/{$projectSlug}/pages/{$pageId}", [
+                'json' => $data,
+            ]);
+
+            $page = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.page.{$projectSlug}.{$pageId}"]);
+            unset($this->cache["plane.pages.{$projectSlug}"]);
+
+            return $page;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to update page: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Get a specific page
+     */
+    public function getPage(string $projectSlug, string $pageId): array
+    {
+        $cacheKey = "plane.page.{$projectSlug}.{$pageId}";
+
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
+        }
+
+        try {
+            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/pages/{$pageId}");
+            $page = json_decode($response->getBody(), true);
+
+            $this->setCache($cacheKey, $page);
+
+            return $page;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to fetch page: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * List pages for a project
+     */
+    public function getPages(string $projectSlug): array
+    {
+        $cacheKey = "plane.pages.{$projectSlug}";
+
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
+        }
+
+        try {
+            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/pages");
+            $pages = json_decode($response->getBody(), true);
+
+            $this->setCache($cacheKey, $pages);
+
+            return $pages;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to fetch pages: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a page
+     */
+    public function deletePage(string $projectSlug, string $pageId): array
+    {
+        try {
+            $response = $this->httpClient->delete("/api/v1/projects/{$projectSlug}/pages/{$pageId}");
+            $result = json_decode($response->getBody(), true);
+
+            // Clear relevant caches
+            unset($this->cache["plane.page.{$projectSlug}.{$pageId}"]);
+            unset($this->cache["plane.pages.{$projectSlug}"]);
+
+            return $result;
+        } catch (RequestException $e) {
+            throw new \Exception('Failed to delete page: '.$e->getMessage());
+        }
+    }
 }
