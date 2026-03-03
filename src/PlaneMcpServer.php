@@ -182,7 +182,7 @@ class PlaneMcpServer
     /**
      * Search issues across projects
      */
-    public function searchIssues(string $query, string $projectSlug = null): array
+    public function searchIssues(string $query, ?string $projectSlug = null): array
     {
         try {
             $params = ['query' => $query];
@@ -192,7 +192,8 @@ class PlaneMcpServer
 
             // Assuming there's a search endpoint - this would need to be implemented
             // based on Plane's actual API
-            $issues = $this->client->getIssues($projectSlug ?? config('plane-mcp.default_project'), $params);
+            $defaultProject = $_ENV['PLANE_DEFAULT_PROJECT'] ?? 'default';
+            $issues = $this->client->getIssues($projectSlug ?? $defaultProject, $params);
 
             return [
                 'success' => true,

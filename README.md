@@ -27,21 +27,67 @@ This MCP server allows AI assistants like Claude Code to interact directly with 
 ## Installation
 
 ```bash
-composer require technoliga/plane-mcp
+composer install
 ```
 
 ## Configuration
 
-Create a `.env` file with your Plane credentials:
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
 
-```env
-PLANE_BASE_URL=https://your-plane-instance.com
-PLANE_API_TOKEN=your_api_token_here
-```
+2. Edit `.env` with your Plane instance details:
+   ```env
+   PLANE_BASE_URL=https://your-plane-instance.com
+   PLANE_API_TOKEN=your_api_token_here
+   PLANE_DEFAULT_PROJECT=your-default-project-slug
+   ```
+
+3. Obtain your API token from Plane:
+   - Go to your Plane instance
+   - Navigate to Profile Settings > API Tokens
+   - Create a new token with appropriate permissions
 
 ## Usage
 
-This package is designed to be used as an MCP server with AI tools like Claude Code.
+### Starting the Server
+
+```bash
+php -S localhost:8080 server.php
+```
+
+The server will be available at `http://localhost:8080`.
+
+### Testing the Server
+
+```bash
+# Test server info
+curl http://localhost:8080
+
+# Test listing projects (requires valid credentials)
+curl -X POST http://localhost:8080 \
+  -H "Content-Type: application/json" \
+  -d '{"method": "list_projects", "params": {}}'
+```
+
+### Using with Claude Code
+
+Once the server is running, you can connect Claude Code to it by configuring an MCP client to point to `http://localhost:8080`.
+
+## Available Methods
+
+The server exposes the following MCP methods:
+
+- `list_projects` - Get all projects
+- `get_project` - Get details of a specific project
+- `list_issues` - List issues for a project
+- `get_issue` - Get details of a specific issue
+- `create_issue` - Create a new issue
+- `update_issue` - Update an existing issue
+- `list_modules` - Get modules for a project
+- `list_cycles` - Get cycles for a project
+- `search_issues` - Search issues across projects
 
 ## Development
 

@@ -4,7 +4,6 @@ namespace Technoliga\PlaneMcp;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Support\Facades\Cache;
 
 class PlaneClient
 {
@@ -13,13 +12,14 @@ class PlaneClient
     protected string $apiToken;
     protected bool $cacheEnabled;
     protected int $cacheTtl;
+    protected array $cache = [];
 
     public function __construct(array $config = [])
     {
-        $this->baseUrl = $config['base_url'] ?? config('plane-mcp.base_url');
-        $this->apiToken = $config['api_token'] ?? config('plane-mcp.api_token');
-        $this->cacheEnabled = $config['cache_enabled'] ?? config('plane-mcp.cache_enabled', true);
-        $this->cacheTtl = $config['cache_ttl'] ?? config('plane-mcp.cache_ttl', 300);
+        $this->baseUrl = $config['base_url'] ?? ($_ENV['PLANE_BASE_URL'] ?? 'https://api.plane.so');
+        $this->apiToken = $config['api_token'] ?? ($_ENV['PLANE_API_TOKEN'] ?? '');
+        $this->cacheEnabled = $config['cache_enabled'] ?? filter_var($_ENV['PLANE_CACHE_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN);
+        $this->cacheTtl = $config['cache_ttl'] ?? (int) ($_ENV['PLANE_CACHE_TTL'] ?? 300);
 
         $this->httpClient = new Client([
             'base_uri' => $this->baseUrl,
@@ -27,8 +27,41 @@ class PlaneClient
                 'Authorization' => 'Bearer '.$this->apiToken,
                 'Content-Type' => 'application/json',
             ],
-            'timeout' => $config['timeout'] ?? config('plane-mcp.timeout', 30),
+            'timeout' => $config['timeout'] ?? (int) ($_ENV['PLANE_TIMEOUT'] ?? 30),
         ]);
+    }
+
+    /**
+     * Simple in-memory cache implementation
+     */
+    protected function getFromCache(string $key)
+    {
+        if (!$this->cacheEnabled || !isset($this->cache[$key])) {
+            return null;
+        }
+
+        $item = $this->cache[$key];
+        if (time() > $item['expires']) {
+            unset($this->cache[$key]);
+            return null;
+        }
+
+        return $item['data'];
+    }
+
+    /**
+     * Simple in-memory cache implementation
+     */
+    protected function setCache(string $key, $data)
+    {
+        if (!$this->cacheEnabled) {
+            return;
+        }
+
+        $this->cache[$key] = [
+            'data' => $data,
+            'expires' => time() + $this->cacheTtl
+        ];
     }
 
     /**
@@ -38,17 +71,15 @@ class PlaneClient
     {
         $cacheKey = 'plane.projects';
 
-        if ($this->cacheEnabled && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
         }
 
         try {
             $response = $this->httpClient->get('/api/v1/projects');
             $projects = json_decode($response->getBody(), true);
 
-            if ($this->cacheEnabled) {
-                Cache::put($cacheKey, $projects, $this->cacheTtl);
-            }
+            $this->setCache($cacheKey, $projects);
 
             return $projects;
         } catch (RequestException $e) {
@@ -63,17 +94,15 @@ class PlaneClient
     {
         $cacheKey = "plane.project.{$projectSlug}";
 
-        if ($this->cacheEnabled && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
         }
 
         try {
             $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}");
             $project = json_decode($response->getBody(), true);
 
-            if ($this->cacheEnabled) {
-                Cache::put($cacheKey, $project, $this->cacheTtl);
-            }
+            $this->setCache($cacheKey, $project);
 
             return $project;
         } catch (RequestException $e) {
@@ -88,8 +117,8 @@ class PlaneClient
     {
         $cacheKey = "plane.issues.{$projectSlug}.".md5(serialize($params));
 
-        if ($this->cacheEnabled && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
         }
 
         try {
@@ -97,9 +126,7 @@ class PlaneClient
             $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/issues?{$queryString}");
             $issues = json_decode($response->getBody(), true);
 
-            if ($this->cacheEnabled) {
-                Cache::put($cacheKey, $issues, $this->cacheTtl);
-            }
+            $this->setCache($cacheKey, $issues);
 
             return $issues;
         } catch (RequestException $e) {
@@ -114,17 +141,15 @@ class PlaneClient
     {
         $cacheKey = "plane.issue.{$projectSlug}.{$issueId}";
 
-        if ($this->cacheEnabled && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
         }
 
         try {
             $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/issues/{$issueId}");
             $issue = json_decode($response->getBody(), true);
 
-            if ($this->cacheEnabled) {
-                Cache::put($cacheKey, $issue, $this->cacheTtl);
-            }
+            $this->setCache($cacheKey, $issue);
 
             return $issue;
         } catch (RequestException $e) {
@@ -145,8 +170,8 @@ class PlaneClient
             $issue = json_decode($response->getBody(), true);
 
             // Clear relevant caches
-            Cache::forget("plane.issues.{$projectSlug}");
-            Cache::forget("plane.project.{$projectSlug}");
+            unset($this->cache["plane.issues.{$projectSlug}"]);
+            unset($this->cache["plane.project.{$projectSlug}"]);
 
             return $issue;
         } catch (RequestException $e) {
@@ -167,8 +192,8 @@ class PlaneClient
             $issue = json_decode($response->getBody(), true);
 
             // Clear relevant caches
-            Cache::forget("plane.issue.{$projectSlug}.{$issueId}");
-            Cache::forget("plane.issues.{$projectSlug}");
+            unset($this->cache["plane.issue.{$projectSlug}.{$issueId}"]);
+            unset($this->cache["plane.issues.{$projectSlug}"]);
 
             return $issue;
         } catch (RequestException $e) {
@@ -183,17 +208,15 @@ class PlaneClient
     {
         $cacheKey = "plane.modules.{$projectSlug}";
 
-        if ($this->cacheEnabled && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
         }
 
         try {
             $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/modules");
             $modules = json_decode($response->getBody(), true);
 
-            if ($this->cacheEnabled) {
-                Cache::put($cacheKey, $modules, $this->cacheTtl);
-            }
+            $this->setCache($cacheKey, $modules);
 
             return $modules;
         } catch (RequestException $e) {
@@ -208,17 +231,15 @@ class PlaneClient
     {
         $cacheKey = "plane.cycles.{$projectSlug}";
 
-        if ($this->cacheEnabled && Cache::has($cacheKey)) {
-            return Cache::get($cacheKey);
+        if ($cached = $this->getFromCache($cacheKey)) {
+            return $cached;
         }
 
         try {
             $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/cycles");
             $cycles = json_decode($response->getBody(), true);
 
-            if ($this->cacheEnabled) {
-                Cache::put($cacheKey, $cycles, $this->cacheTtl);
-            }
+            $this->setCache($cacheKey, $cycles);
 
             return $cycles;
         } catch (RequestException $e) {
