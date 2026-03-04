@@ -119,6 +119,26 @@ The server exposes the following MCP methods:
 - `get_issue` - Get details of a specific issue
 - `list_issues` - List issues for a project
 - `search_issues` - Search issues across projects
+- `create_standardized_work_item` - Create a new issue with standardized naming and description
+
+### Standardized Work Items
+
+The `create_standardized_work_item` method creates issues with consistent naming conventions and comprehensive descriptions that include Claude Code implementation guides.
+
+**Naming Convention**: `[Module-Cycle] Task Name`
+- Example: `[M02-v1.0] Implement search functionality`
+
+**Description Format**:
+- Module and cycle identification
+- Priority level
+- Additional context (optional)
+- Claude Code Implementation Guide with:
+  - Analysis section
+  - Implementation steps
+  - Testing guidelines
+  - Success criteria
+
+See [STANDARDIZED-WORK-ITEMS.md](STANDARDIZED-WORK-ITEMS.md) for detailed documentation.
 
 ## Integration Examples
 
@@ -141,6 +161,22 @@ const result = await mcp.call('create_page', {
     name: 'Project Overview',
     content: '# Client Portal System\n\n## Overview\n...',
     description: 'Project overview and technical details'
+  }
+});
+```
+
+### Creating Standardized Work Items
+```javascript
+const result = await mcp.call('create_standardized_work_item', {
+  project_slug: 'client-portal',
+  module: 'M02',
+  cycle: 'v1.0',
+  task_name: 'Implement search functionality',
+  priority: 'high',
+  context: {
+    feature_area: 'Knowledge Base',
+    estimated_hours: '8',
+    dependencies: 'Database schema ready'
   }
 });
 ```

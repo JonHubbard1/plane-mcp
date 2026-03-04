@@ -10,6 +10,7 @@ class PlaneClient
     protected Client $httpClient;
     protected string $baseUrl;
     protected string $apiToken;
+    protected string $workspace;
     protected bool $cacheEnabled;
     protected int $cacheTtl;
     protected array $cache = [];
@@ -18,13 +19,14 @@ class PlaneClient
     {
         $this->baseUrl = $config['base_url'] ?? ($_ENV['PLANE_BASE_URL'] ?? 'https://api.plane.so');
         $this->apiToken = $config['api_token'] ?? ($_ENV['PLANE_API_TOKEN'] ?? '');
+        $this->workspace = $config['workspace'] ?? ($_ENV['PLANE_WORKSPACE'] ?? 'default');
         $this->cacheEnabled = $config['cache_enabled'] ?? filter_var($_ENV['PLANE_CACHE_ENABLED'] ?? true, FILTER_VALIDATE_BOOLEAN);
         $this->cacheTtl = $config['cache_ttl'] ?? (int) ($_ENV['PLANE_CACHE_TTL'] ?? 300);
 
         $this->httpClient = new Client([
             'base_uri' => $this->baseUrl,
             'headers' => [
-                'Authorization' => 'Bearer '.$this->apiToken,
+                'X-API-Key' => $this->apiToken,
                 'Content-Type' => 'application/json',
             ],
             'timeout' => $config['timeout'] ?? (int) ($_ENV['PLANE_TIMEOUT'] ?? 30),
@@ -76,7 +78,7 @@ class PlaneClient
         }
 
         try {
-            $response = $this->httpClient->get('/api/v1/projects');
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/");
             $projects = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $projects);
@@ -99,15 +101,57 @@ class PlaneClient
         }
 
         try {
-            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}");
+            // First try to get project by slug
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/{$projectSlug}/");
             $project = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $project);
 
             return $project;
         } catch (RequestException $e) {
-            throw new \Exception('Failed to fetch project: '.$e->getMessage());
+            // If that fails, try to find project by listing all projects and matching identifier
+            try {
+                $projectsResponse = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/");
+                $projects = json_decode($projectsResponse->getBody(), true);
+
+                if (isset($projects['results'])) {
+                    foreach ($projects['results'] as $project) {
+                        if (isset($project['identifier']) && $project['identifier'] === $projectSlug) {
+                            $this->setCache($cacheKey, $project);
+                            return $project;
+                        }
+                    }
+                }
+
+                throw new \Exception('Project not found: '.$projectSlug);
+            } catch (RequestException $fallbackException) {
+                throw new \Exception('Failed to fetch project: '.$e->getMessage().'. Fallback also failed: '.$fallbackException->getMessage());
+            }
         }
+    }
+
+    /**
+     * Get project ID by slug
+     */
+    public function getProjectIdBySlug(string $projectSlug): string
+    {
+        $project = $this->getProject($projectSlug);
+
+        // If we got the project directly, return its ID
+        if (isset($project['id'])) {
+            return $project['id'];
+        }
+
+        // If we got a list of projects, find the one with matching identifier
+        if (isset($project['results'])) {
+            foreach ($project['results'] as $proj) {
+                if (isset($proj['identifier']) && $proj['identifier'] === $projectSlug && isset($proj['id'])) {
+                    return $proj['id'];
+                }
+            }
+        }
+
+        throw new \Exception('Could not determine project ID for slug: '.$projectSlug);
     }
 
     /**
@@ -122,8 +166,9 @@ class PlaneClient
         }
 
         try {
+            $projectId = $this->getProjectIdBySlug($projectSlug);
             $queryString = http_build_query($params);
-            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/issues?{$queryString}");
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/issues/?{$queryString}");
             $issues = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $issues);
@@ -146,7 +191,8 @@ class PlaneClient
         }
 
         try {
-            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/issues/{$issueId}");
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/issues/{$issueId}/");
             $issue = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $issue);
@@ -163,7 +209,8 @@ class PlaneClient
     public function createIssue(string $projectSlug, array $data): array
     {
         try {
-            $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/issues", [
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->post("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/issues/", [
                 'json' => $data,
             ]);
 
@@ -185,7 +232,8 @@ class PlaneClient
     public function updateIssue(string $projectSlug, string $issueId, array $data): array
     {
         try {
-            $response = $this->httpClient->patch("/api/v1/projects/{$projectSlug}/issues/{$issueId}", [
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->patch("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/issues/{$issueId}/", [
                 'json' => $data,
             ]);
 
@@ -213,7 +261,8 @@ class PlaneClient
         }
 
         try {
-            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/modules");
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/modules/");
             $modules = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $modules);
@@ -236,7 +285,8 @@ class PlaneClient
         }
 
         try {
-            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/cycles");
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/cycles/");
             $cycles = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $cycles);
@@ -253,7 +303,8 @@ class PlaneClient
     public function createModule(string $projectSlug, array $data): array
     {
         try {
-            $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/modules", [
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->post("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/modules/", [
                 'json' => $data,
             ]);
 
@@ -275,7 +326,8 @@ class PlaneClient
     public function createCycle(string $projectSlug, array $data): array
     {
         try {
-            $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/cycles", [
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->post("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/cycles/", [
                 'json' => $data,
             ]);
 
@@ -297,7 +349,8 @@ class PlaneClient
     public function createPage(string $projectSlug, array $data): array
     {
         try {
-            $response = $this->httpClient->post("/api/v1/projects/{$projectSlug}/pages", [
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->post("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/pages/", [
                 'json' => $data,
             ]);
 
@@ -318,7 +371,8 @@ class PlaneClient
     public function updatePage(string $projectSlug, string $pageId, array $data): array
     {
         try {
-            $response = $this->httpClient->patch("/api/v1/projects/{$projectSlug}/pages/{$pageId}", [
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->patch("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/pages/{$pageId}/", [
                 'json' => $data,
             ]);
 
@@ -346,7 +400,8 @@ class PlaneClient
         }
 
         try {
-            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/pages/{$pageId}");
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/pages/{$pageId}/");
             $page = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $page);
@@ -369,7 +424,8 @@ class PlaneClient
         }
 
         try {
-            $response = $this->httpClient->get("/api/v1/projects/{$projectSlug}/pages");
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->get("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/pages/");
             $pages = json_decode($response->getBody(), true);
 
             $this->setCache($cacheKey, $pages);
@@ -386,7 +442,8 @@ class PlaneClient
     public function deletePage(string $projectSlug, string $pageId): array
     {
         try {
-            $response = $this->httpClient->delete("/api/v1/projects/{$projectSlug}/pages/{$pageId}");
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->delete("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/pages/{$pageId}/");
             $result = json_decode($response->getBody(), true);
 
             // Clear relevant caches
@@ -405,7 +462,7 @@ class PlaneClient
     public function createProject(array $data): array
     {
         try {
-            $response = $this->httpClient->post("/api/v1/projects/", [
+            $response = $this->httpClient->post("/api/v1/workspaces/{$this->workspace}/projects/", [
                 'json' => $data,
             ]);
 
@@ -426,7 +483,8 @@ class PlaneClient
     public function updateProject(string $projectSlug, array $data): array
     {
         try {
-            $response = $this->httpClient->patch("/api/v1/projects/{$projectSlug}", [
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->patch("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/", [
                 'json' => $data,
             ]);
 
@@ -448,7 +506,8 @@ class PlaneClient
     public function deleteProject(string $projectSlug): array
     {
         try {
-            $response = $this->httpClient->delete("/api/v1/projects/{$projectSlug}");
+            $projectId = $this->getProjectIdBySlug($projectSlug);
+            $response = $this->httpClient->delete("/api/v1/workspaces/{$this->workspace}/projects/{$projectId}/");
             $result = json_decode($response->getBody(), true);
 
             // Clear relevant caches

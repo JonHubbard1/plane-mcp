@@ -197,12 +197,66 @@ class ProjectManagementExample
             } else {
                 echo "Error creating cycle: " . $createCycleResult['error'] . "\n";
             }
+
+            echo "\n";
+
+            // 8. Create standardized work items for the project
+            echo "8. Creating standardized work items...\n";
+
+            // Create work items using the new standardized format
+            $workItems = [
+                [
+                    'module' => 'M01', // Authentication module
+                    'cycle' => 'v1.0',
+                    'task_name' => 'Implement user registration',
+                    'priority' => 'high',
+                    'context' => [
+                        'feature_area' => 'Authentication',
+                        'estimated_hours' => '6',
+                        'dependencies' => 'Database schema ready'
+                    ]
+                ],
+                [
+                    'module' => 'M01', // Authentication module
+                    'cycle' => 'v1.0',
+                    'task_name' => 'Implement login functionality',
+                    'priority' => 'high',
+                    'context' => [
+                        'feature_area' => 'Authentication',
+                        'estimated_hours' => '4',
+                        'security_considerations' => 'Password hashing, CSRF protection'
+                    ]
+                ],
+                [
+                    'module' => 'M02', // Dashboard module
+                    'cycle' => 'v1.0',
+                    'task_name' => 'Design dashboard layout',
+                    'priority' => 'medium',
+                    'context' => [
+                        'feature_area' => 'Dashboard',
+                        'estimated_hours' => '8',
+                        'design_requirements' => 'Responsive layout, key metrics display'
+                    ]
+                ]
+            ];
+
+            foreach ($workItems as $workItem) {
+                $createWorkItemResult = $this->callMcpMethod('create_standardized_work_item', array_merge([
+                    'project_slug' => 'client-portal'
+                ], $workItem));
+
+                if ($createWorkItemResult['success']) {
+                    echo "  Created work item: [" . $workItem['module'] . "-" . $workItem['cycle'] . "] " . $workItem['task_name'] . "\n";
+                } else {
+                    echo "  Error creating work item '" . $workItem['task_name'] . "': " . $createWorkItemResult['error'] . "\n";
+                }
+            }
         }
 
         echo "\n";
 
-        // 8. List all projects again to see the new one
-        echo "8. Listing all projects after creation...\n";
+        // 9. List all projects again to see the new one
+        echo "9. Listing all projects after creation...\n";
         $projectsResult = $this->callMcpMethod('list_projects');
 
         if ($projectsResult['success']) {

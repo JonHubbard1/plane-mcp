@@ -2,6 +2,8 @@
 
 namespace Technoliga\PlaneMcp;
 
+use Technoliga\PlaneMcp\WorkItemDescriptionGenerator;
+
 class McpHandler
 {
     protected PlaneMcpServer $server;
@@ -9,6 +11,59 @@ class McpHandler
     public function __construct(PlaneMcpServer $server)
     {
         $this->server = $server;
+    }
+
+    /**
+     * Create a standardized work item with proper naming convention and description
+     */
+    protected function createStandardizedWorkItem(array $params): array
+    {
+        $projectSlug = $params['project_slug'] ?? null;
+        $module = $params['module'] ?? null;
+        $cycle = $params['cycle'] ?? null;
+        $taskName = $params['task_name'] ?? null;
+        $priority = $params['priority'] ?? 'medium';
+        $additionalContext = $params['context'] ?? [];
+
+        // Validate required parameters
+        $validation = WorkItemDescriptionGenerator::validateWorkItemParams([
+            'module' => $module,
+            'cycle' => $cycle,
+            'task_name' => $taskName,
+            'priority' => $priority
+        ]);
+
+        if (!$validation['success']) {
+            return ['success' => false, 'error' => $validation['error']];
+        }
+
+        if (!$projectSlug) {
+            return ['success' => false, 'error' => 'Project slug is required'];
+        }
+
+        // Generate standardized data
+        $issueData = WorkItemDescriptionGenerator::generateStandardizedDescription(
+            $module,
+            $cycle,
+            $taskName,
+            $priority,
+            $additionalContext
+        );
+
+        // Create the issue
+        try {
+            $result = $this->server->createIssue($projectSlug, $issueData);
+            return [
+                'success' => true,
+                'issue' => $result,
+                'message' => 'Standardized work item created successfully'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'Failed to create work item: ' . $e->getMessage()
+            ];
+        }
     }
 
     /**
@@ -62,6 +117,9 @@ class McpHandler
                 }
 
                 return $this->server->createIssue($projectSlug, $data);
+
+            case 'create_standardized_work_item':
+                return $this->createStandardizedWorkItem($params);
 
             case 'update_issue':
                 $projectSlug = $params['project_slug'] ?? null;
@@ -369,6 +427,17 @@ class McpHandler
                 'description' => 'Delete a project',
                 'parameters' => [
                     'project_slug' => 'string (required) - The project slug'
+                ]
+            ],
+            'create_standardized_work_item' => [
+                'description' => 'Create a new work item with standardized naming and description',
+                'parameters' => [
+                    'project_slug' => 'string (required) - The project slug',
+                    'module' => 'string (required) - The module identifier (e.g., M01)',
+                    'cycle' => 'string (required) - The cycle identifier (e.g., v1.0)',
+                    'task_name' => 'string (required) - The task name',
+                    'priority' => 'string (optional) - Priority level (low, medium, high) - defaults to medium',
+                    'context' => 'array (optional) - Additional context for the task'
                 ]
             ]
         ];

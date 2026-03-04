@@ -14,6 +14,8 @@ return [
 
     'api_token' => env('PLANE_API_TOKEN'),
 
+    'workspace' => env('PLANE_WORKSPACE', 'default'),
+
     'timeout' => env('PLANE_TIMEOUT', 30),
 
     /*
